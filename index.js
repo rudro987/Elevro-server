@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,16 +28,29 @@ async function run() {
   try {
     const db = client.db("elevroDB");
     const usersCollection = db.collection("users");
+    const allTestsCollection = db.collection("allTests");
 
     //jwt api
     app.post('/jwt', (req, res) => {
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
         res.send({ token });
-    })
+    });
 
 
     //all users related api
+
+    app.get('/allTests', async (req, res) => {
+      const result = await allTestsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get('/allTests/:id', async (req, res) => {
+      const id = req.params.id;    
+      const query = { _id: new ObjectId(id) };
+      const result = await allTestsCollection.findOne(query);
+      res.send(result);
+    })
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -54,6 +67,8 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    // Admin related apis
 
     // await client.connect();
 
