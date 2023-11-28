@@ -29,6 +29,7 @@ async function run() {
     const db = client.db("elevroDB");
     const usersCollection = db.collection("users");
     const allTestsCollection = db.collection("allTests");
+    const bookedTestsCollection = db.collection("bookedTests");
 
     //jwt api
     app.post('/jwt', (req, res) => {
@@ -50,12 +51,31 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await allTestsCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+
+    app.post('/bookedTest', async (req, res) => {
+      const bookedTest = req.body;
+      const result = await bookedTestsCollection.insertOne(bookedTest);
+      res.send(result);
+    });
+    
+    app.patch('/allTests/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $inc: {
+          bookings: 1,
+          slots: -1
+        }
+      }
+      const result = await allTestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
 
     app.post("/users", async (req, res) => {
       const user = req.body;
