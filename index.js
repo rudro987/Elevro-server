@@ -90,6 +90,33 @@ async function run() {
 
     // Admin related apis
 
+    
+
+    app.patch('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const query = req.query.status;
+      let updatedDoc = {};
+      if(query === 'active'){
+        updatedDoc = {
+          $set: {
+            status: "blocked"
+          }
+        }
+      }else if(query === 'blocked'){
+        updatedDoc = {
+          $set: {
+            status: "active"
+          }
+        }
+      }
+      
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      console.log(result);
+      
+      res.send(result);
+    });
+
     // await client.connect();
 
     // Connect the client to the server	(optional starting in v4.7)
