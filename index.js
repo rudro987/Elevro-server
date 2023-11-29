@@ -82,7 +82,7 @@ async function run() {
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
       if (existingUser) {
-        return res.send({ message: "user already exists" });
+        return res.send({ message: "user already exists", insertedId: null });
       }
       const result = await usersCollection.insertOne(user);
       res.send(result);
