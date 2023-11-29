@@ -90,7 +90,28 @@ async function run() {
 
     // Admin related apis
 
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = req.query.role;
+      const filter = { _id: new ObjectId(id) };
+      let updatedDoc = {};
+       if(query === 'admin'){
+        updatedDoc = {
+          $set: {
+            role: "user"
+          }
+        }
+      }else if(query === 'user'){
+        updatedDoc = {
+          $set: {
+            role: "admin"
+          }
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
     
+    });
 
     app.patch('/users/:id', async (req, res) => {
       const id = req.params.id;
