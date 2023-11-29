@@ -24,21 +24,6 @@ const client = new MongoClient(uri, {
   },
 });
 
-const verifyToken = (req, res, next) => {
-  if(!req.headers.authorization){
-    return res.status(401).send({message: 'Unauthorized access'});
-  }
-  const token = req.headers.authorization.split(' ')[1];
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if(err){
-      return res.status(401).send({message: 'Unauthorized access'});
-    }
-    req.decoded = decoded;
-    next();
-  });
-}
-
 async function run() {
   try {
     const db = client.db("elevroDB");
@@ -53,6 +38,32 @@ async function run() {
         res.send({ token });
     });
 
+    const verifyToken = (req, res, next) => {
+      if(!req.headers.authorization){
+        return res.status(401).send({message: 'Unauthorized access'});
+      }
+      const token = req.headers.authorization.split(' ')[1];
+    
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if(err){
+          return res.status(401).send({message: 'Unauthorized access'});
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+    
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = {email: email};
+      const user = await usersCollection.findOne(query);
+      const isAdmin = user?.role === 'admin';
+      if(!isAdmin){
+        return res.status(403).send({message: 'Forbidden access'});
+      }
+      next();
+    };
+
 
     //all users related api
 
@@ -65,11 +76,6 @@ async function run() {
       const id = req.params.id;    
       const query = { _id: new ObjectId(id) };
       const result = await allTestsCollection.findOne(query);
-      res.send(result);
-    });
-
-    app.get("/users", verifyToken, async (req, res) => {
-      const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
@@ -105,11 +111,16 @@ async function run() {
 
     // Admin related apis
 
-    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get('/users/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       if(email !== req.decoded.email){
         return res.status(403).send({message: 'Forbidden access'});
-      }
+      };
 
       const query = { email: email };
       const user = await usersCollection.findOne(query);
@@ -120,7 +131,14 @@ async function run() {
       res.send({ admin });
     });
 
-    app.patch('/users/admin/:id', async (req, res) => {
+    app.post('/addTest', verifyToken, verifyAdmin, async (req, res) => {
+      const test = req.body; 
+      const result = await allTestsCollection.insertOne(test);
+      res.send(result);
+    
+    })
+
+    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = req.query.role;
       const filter = { _id: new ObjectId(id) };
@@ -143,7 +161,7 @@ async function run() {
     
     });
 
-    app.patch('/users/:id', async (req, res) => {
+    app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const query = req.query.status;
