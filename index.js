@@ -151,6 +151,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/banners/status',  verifyToken, verifyAdmin, async (req, res) => {
+      const query = { active: true };
+      const result = await bannerCollection.findOne(query);
+      res.send(result);
+    });
+
     app.post('/addTest', verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body; 
       const result = await allTestsCollection.insertOne(test);
