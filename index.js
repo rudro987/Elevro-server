@@ -140,6 +140,11 @@ async function run() {
       res.send({ admin });
     });
 
+    app.get('/allBookings', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await bookedTestsCollection.find().toArray();
+      res.send(result);
+    })
+
     app.post('/addTest', verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body; 
       const result = await allTestsCollection.insertOne(test);
@@ -204,10 +209,28 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/allBookings/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const report = req.body;
+      const updatedDoc = {
+        $set: report
+      }
+      const result = await bookedTestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
     app.delete('/allTests/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await allTestsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.delete('/allBookings/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bookedTestsCollection.deleteOne(query);
       res.send(result);
     });
 
