@@ -138,6 +138,17 @@ async function run() {
     
     })
 
+    app.put('/allTests/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id= req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedTest = req.body;
+      const updatedDoc = {
+        $set: updatedTest
+      };
+      const result = await allTestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
     app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = req.query.role;
@@ -181,6 +192,13 @@ async function run() {
       }
       
       const result = await usersCollection.updateOne(filter, updatedDoc);      
+      res.send(result);
+    });
+
+    app.delete('/allTests/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allTestsCollection.deleteOne(query);
       res.send(result);
     });
 
