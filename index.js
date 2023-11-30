@@ -144,7 +144,12 @@ async function run() {
     app.get('/allBookings', verifyToken, verifyAdmin, async (req, res) => {
       const result = await bookedTestsCollection.find().toArray();
       res.send(result);
-    })
+    });
+
+    app.get('/banners', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await bannerCollection.find().toArray();
+      res.send(result);
+    });
 
     app.post('/addTest', verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body; 
@@ -227,6 +232,18 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/banners/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedStatus = req.body;
+      const updatedDoc = {
+        $set: updatedStatus,
+      }
+      const result = await bannerCollection.updateOne(filter, updatedDoc);      
+      res.send(result);
+    
+    });
+
     app.delete('/allTests/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -240,6 +257,14 @@ async function run() {
       const result = await bookedTestsCollection.deleteOne(query);
       res.send(result);
     });
+
+    app.delete('/banners/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bannerCollection.deleteOne(query);
+      res.send(result);
+    
+    })
 
     // await client.connect();
 
