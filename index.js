@@ -30,6 +30,7 @@ async function run() {
     const usersCollection = db.collection("users");
     const allTestsCollection = db.collection("allTests");
     const bookedTestsCollection = db.collection("bookedTests");
+    const bannerCollection = db.collection("banners");
 
     //jwt api
     app.post('/jwt', (req, res) => {
@@ -150,7 +151,13 @@ async function run() {
       const result = await allTestsCollection.insertOne(test);
       res.send(result);
     
-    })
+    });
+
+    app.post('/addBanner', verifyToken, verifyAdmin, async (req, res) => {
+      const banner = req.body;
+      const result = await bannerCollection.insertOne(banner);
+      res.send(result);
+    });
 
     app.put('/allTests/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id= req.params.id;
