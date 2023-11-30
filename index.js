@@ -116,17 +116,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/users/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
-      const email = req.params.email;
-      if(email !== req.decoded.email){
-        return res.status(403).send({message: 'Forbidden access'});
-      };
+    app.get('/users/:email', verifyToken, async (req, res) => {
+      const query = { email: req.params.email };
+      const user = await usersCollection.findOne(query);
+      let userStatus = false;
+      if(user){
+        userStatus = user?.status === 'active';
+      }
+      res.send({ userStatus });
+    })
 
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
       const query = { email: email };
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const user = await usersCollection.findOne(query);
       let admin = false;
       if(user){
-        admin = user.role === 'admin';
+        admin = user?.role === 'admin';
       }
       res.send({ admin });
     });
