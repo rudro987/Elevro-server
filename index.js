@@ -80,6 +80,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/userBookings', verifyToken, async (req, res) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const result = await bookedTestsCollection.find(query).toArray();
+      res.send(result);
+    
+    });
+
     app.post('/bookedTest', async (req, res) => {
       const bookedTest = req.body;
       const result = await bookedTestsCollection.insertOne(bookedTest);
@@ -109,6 +117,13 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    app.delete('/userBookings/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bookedTestsCollection.deleteOne(query);
+      res.send(result);
+    })
 
     // Admin related apis
 
@@ -151,7 +166,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/banners/status',  verifyToken, verifyAdmin, async (req, res) => {
+    app.get('/banners/status', async (req, res) => {
       const query = { active: true };
       const result = await bannerCollection.findOne(query);
       res.send(result);
