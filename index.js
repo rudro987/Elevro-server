@@ -81,6 +81,22 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/allTestsData', async (req, res) => {
+      const { date } = req.query;
+      console.log(date);
+      let query = {};
+      if (date) {
+        query = { date: date };
+      }
+      if (date === '') {
+        const result = await allTestsCollection.find().toArray();
+        res.send(result);
+      } else {
+        const result = await allTestsCollection.find(query).toArray();
+        res.send(result);
+      }
+    })
+
     app.get("/userBookings", verifyToken, async (req, res) => {
       const email = req.decoded.email;
       const query = { email: email };
@@ -157,6 +173,7 @@ async function run() {
     });
 
     app.get("/allBookings", verifyToken, verifyAdmin, async (req, res) => {
+      
       const { search } = req.query;
       let query = {};
       if (search) {
