@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.PG_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -111,13 +112,21 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/bookedTest", async (req, res) => {
+    app.get('/bookedTest/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email };
+      const result = await bookedTestsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post("/bookedTest", verifyToken, async (req, res) => {
       const bookedTest = req.body;
       const result = await bookedTestsCollection.insertOne(bookedTest);
       res.send(result);
     });
 
-    app.patch("/allTests/:id", async (req, res) => {
+    app.patch("/allTests/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
@@ -141,11 +150,9 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/users/profile/:id', async (req, res) => {
+    app.patch('/users/profile/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const userInfo = req.body;
-      console.log(userInfo);
       const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: userInfo,
@@ -160,6 +167,24 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await bookedTestsCollection.deleteOne(query);
       res.send(result);
+    });
+
+
+    //payment
+
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
     });
 
     // Admin related apis
