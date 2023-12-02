@@ -95,12 +95,19 @@ async function run() {
         const result = await allTestsCollection.find(query).toArray();
         res.send(result);
       }
-    })
+    });
 
     app.get("/userBookings", verifyToken, async (req, res) => {
       const email = req.decoded.email;
       const query = { email: email };
       const result = await bookedTestsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get('/loggedUser/:email', verifyToken, async (req, res) => {
+      const query = { email: req.params.email};
+      const result = await usersCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -133,6 +140,20 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    app.patch('/users/profile/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const userInfo = req.body;
+      console.log(userInfo);
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: userInfo,
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    
+    })
 
     app.delete("/userBookings/:id", async (req, res) => {
       const id = req.params.id;
