@@ -114,7 +114,6 @@ async function run() {
 
     app.get('/bookedTest/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
       const query = { email: email };
       const result = await bookedTestsCollection.find(query).toArray();
       res.send(result);
@@ -137,6 +136,20 @@ async function run() {
       };
       const result = await allTestsCollection.updateOne(filter, updatedDoc);
       res.send(result);
+    });
+
+    app.patch("/allTests/userUpdate/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $inc: {
+          bookings: -1,
+          slots: 1,
+        },
+      };
+      const result = await allTestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    
     });
 
     app.post("/users", async (req, res) => {
@@ -162,9 +175,9 @@ async function run() {
     
     })
 
-    app.delete("/userBookings/:id", async (req, res) => {
+    app.delete("/userBookings/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
+      const query = { test_id: id };
       const result = await bookedTestsCollection.deleteOne(query);
       res.send(result);
     });
@@ -234,6 +247,12 @@ async function run() {
       }
     });
 
+    app.get('/bookedTests/result', async (req, res) => {
+      const query = { report_status: 'delivered' };
+      const result = await bookedTestsCollection.find(query).toArray();
+      res.send(result);
+    })
+
     app.get("/banners", verifyToken, verifyAdmin, async (req, res) => {
       const result = await bannerCollection.find().toArray();
       res.send(result);
@@ -266,6 +285,21 @@ async function run() {
       };
       const result = await allTestsCollection.updateOne(filter, updatedDoc);
       res.send(result);
+    });
+
+    app.patch("/allTests/adminUpdate/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $inc: {
+          bookings: -1,
+          slots: 1,
+        },
+      };
+      const result = await allTestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    
     });
 
     app.patch(
@@ -361,7 +395,7 @@ async function run() {
       verifyAdmin,
       async (req, res) => {
         const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
+        const query = { test_id: id };
         const result = await bookedTestsCollection.deleteOne(query);
         res.send(result);
       }
