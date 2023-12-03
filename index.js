@@ -32,6 +32,7 @@ async function run() {
     const allTestsCollection = db.collection("allTests");
     const bookedTestsCollection = db.collection("bookedTests");
     const bannerCollection = db.collection("banners");
+    const blogsCollection = db.collection("blogs");
 
     //jwt api
     app.post("/jwt", (req, res) => {
@@ -118,6 +119,18 @@ async function run() {
       const result = await bookedTestsCollection.find(query).toArray();
       res.send(result);
     });
+
+    app.get('allBlogs', async (req, res) => {
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get('alloBlogs/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
+      res.send(result);
+    })
 
     app.post("/bookedTest", verifyToken, async (req, res) => {
       const bookedTest = req.body;
@@ -264,6 +277,11 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/blogs', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
+    })
+
     app.post("/addTest", verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body;
       const result = await allTestsCollection.insertOne(test);
@@ -273,6 +291,12 @@ async function run() {
     app.post("/addBanner", verifyToken, verifyAdmin, async (req, res) => {
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
+      res.send(result);
+    });
+
+    app.post("/addBlog", verifyToken, verifyAdmin, async (req, res) => {
+      const blog = req.body;
+      const result = await blogsCollection.insertOne(blog);
       res.send(result);
     });
 
@@ -400,6 +424,13 @@ async function run() {
         res.send(result);
       }
     );
+
+    app.delete("/blogs/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     app.delete("/banners/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
