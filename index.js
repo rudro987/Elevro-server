@@ -1,6 +1,6 @@
 const express = require("express");
-const cors = require("cors");
 require("dotenv").config();
+const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.PG_SECRET_KEY);
@@ -83,20 +83,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/allTestsData', async (req, res) => {
-      const { date } = req.query;
-      console.log(date);
-      let query = {};
-      if (date) {
-        query = { date: date };
-      }
-      if (date === '') {
-        const result = await allTestsCollection.find().toArray();
-        res.send(result);
-      } else {
-        const result = await allTestsCollection.find(query).toArray();
-        res.send(result);
-      }
+    app.get("/allTestsData", async (req, res) => {
+      const currentDate = new Date();
+      const allTests = await allTestsCollection.find().toArray();
+      const filteredTests = allTests.filter((test) => {
+        const testDate = new Date(test.date);
+        return testDate >= currentDate;
+      });
+      res.send(filteredTests);
     });
 
     app.get("/userBookings", verifyToken, async (req, res) => {
@@ -106,31 +100,44 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/loggedUser/:email', verifyToken, async (req, res) => {
-      const query = { email: req.params.email};
+    app.get("/loggedUser/:email", verifyToken, async (req, res) => {
+      const query = { email: req.params.email };
       const result = await usersCollection.findOne(query);
       console.log(result);
       res.send(result);
     });
 
-    app.get('/bookedTest/:email', verifyToken, async (req, res) => {
+    app.get("/bookedTest/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await bookedTestsCollection.find(query).toArray();
       res.send(result);
     });
 
-    app.get('allBlogs', async (req, res) => {
+    app.get("/banners/status", async (req, res) => {
+      const query = { active: true };
+      const result = await bannerCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/allBlogs", async (req, res) => {
       const result = await blogsCollection.find().toArray();
       res.send(result);
     });
 
-    app.get('alloBlogs/:id', async (req, res) => {
+    app.get("/alloBlogs/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogsCollection.findOne(query);
       res.send(result);
-    })
+    });
+
+    app.get("/bookedTests/result", verifyToken, async (req, res) => {
+      const email = req.decoded.email;
+      const query = { email: email, report_status: "delivered" };
+      const result = await bookedTestsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.post("/bookedTest", verifyToken, async (req, res) => {
       const bookedTest = req.body;
@@ -162,7 +169,6 @@ async function run() {
       };
       const result = await allTestsCollection.updateOne(filter, updatedDoc);
       res.send(result);
-    
     });
 
     app.post("/users", async (req, res) => {
@@ -176,7 +182,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/users/profile/:id', verifyToken, async (req, res) => {
+    app.patch("/users/profile/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const userInfo = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -185,8 +191,7 @@ async function run() {
       };
       const result = await usersCollection.updateOne(filter, updatedDoc);
       res.send(result);
-    
-    })
+    });
 
     app.delete("/userBookings/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
@@ -195,22 +200,21 @@ async function run() {
       res.send(result);
     });
 
-
     //payment
 
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
-        payment_method_types: ['card']
+        currency: "usd",
+        payment_method_types: ["card"],
       });
 
       res.send({
-        clientSecret: paymentIntent.client_secret
-      })
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
     // Admin related apis
@@ -245,13 +249,12 @@ async function run() {
     });
 
     app.get("/allBookings", verifyToken, verifyAdmin, async (req, res) => {
-      
       const { search } = req.query;
       let query = {};
       if (search) {
         query = { email: search };
       }
-      if (search === '') {
+      if (search === "") {
         const result = await bookedTestsCollection.find().toArray();
         res.send(result);
       } else {
@@ -260,27 +263,15 @@ async function run() {
       }
     });
 
-    app.get('/bookedTests/result', async (req, res) => {
-      const query = { report_status: 'delivered' };
-      const result = await bookedTestsCollection.find(query).toArray();
-      res.send(result);
-    })
-
     app.get("/banners", verifyToken, verifyAdmin, async (req, res) => {
       const result = await bannerCollection.find().toArray();
       res.send(result);
     });
 
-    app.get("/banners/status", async (req, res) => {
-      const query = { active: true };
-      const result = await bannerCollection.findOne(query);
-      res.send(result);
-    });
-
-    app.get('/blogs', verifyToken, verifyAdmin, async (req, res) => {
+    app.get("/blogs", verifyToken, verifyAdmin, async (req, res) => {
       const result = await blogsCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     app.post("/addTest", verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body;
@@ -311,20 +302,24 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allTests/adminUpdate/:id", verifyToken, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      console.log(id);
-      const filter = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $inc: {
-          bookings: -1,
-          slots: 1,
-        },
-      };
-      const result = await allTestsCollection.updateOne(filter, updatedDoc);
-      res.send(result);
-    
-    });
+    app.patch(
+      "/allTests/adminUpdate/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        console.log(id);
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $inc: {
+            bookings: -1,
+            slots: 1,
+          },
+        };
+        const result = await allTestsCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+      }
+    );
 
     app.patch(
       "/users/admin/:id",
@@ -443,10 +438,10 @@ async function run() {
 
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
