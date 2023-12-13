@@ -2,8 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.PG_SECRET_KEY);
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -25,14 +25,26 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function run() {
+const dbConnect = async () => {
   try {
+    client.connect();
+    console.log('DB connected successfully');
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+dbConnect();
+
     const db = client.db("elevroDB");
     const usersCollection = db.collection("users");
     const allTestsCollection = db.collection("allTests");
     const bookedTestsCollection = db.collection("bookedTests");
     const bannerCollection = db.collection("banners");
     const blogsCollection = db.collection("blogs");
+
+    app.get("/", (req, res) => {
+      res.send("Elevro server running successfully!");
+    });
 
     //jwt api
     app.post("/jwt", (req, res) => {
@@ -433,25 +445,6 @@ async function run() {
       const result = await bannerCollection.deleteOne(query);
       res.send(result);
     });
-
-    // await client.connect();
-
-    // Connect the client to the server	(optional starting in v4.7)
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    // console.log(
-    //   "Pinged your deployment. You successfully connected to MongoDB!"
-    // );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
-run().catch(console.dir);
-
-app.get("/", (req, res) => {
-  res.send("Elevro server running successfully!");
-});
 
 app.listen(port, () => {
   console.log(`Elevro server running on port ${port}`);
